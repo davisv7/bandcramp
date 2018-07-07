@@ -12,22 +12,13 @@ DL = '{}\\downloads\\'.format(getcwd())
 
 class BandScraper(object):
     def __init__(self, url):
-        # url = input("Enter bandcamp album website: ")
-        self.url = 'http://musicstore.deru.la/album/1979'
-        # self.url = 'https://tonysplendid.bandcamp.com/album/i-know'
+        self.url = url
         self.soup = self.get_soup()
         self.tracks_to_names = self.get_track_links()
         print("Got track names.")
         self.ratio = len(self.tracks_to_names)
 
-        chrome_options = ChromeOptions()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--log-level=3')
-
-        self.driver = Chrome(chrome_options=chrome_options)
-
         self.get_music()
-        self.driver.close()
         print("\nDownload complete.")
 
     def get_soup(self):
@@ -53,7 +44,11 @@ class BandScraper(object):
         return links_to_names
 
     def get_music(self):
+        chrome_options = ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--log-level=3')
 
+        self.driver = Chrome(chrome_options=chrome_options)
         for i, link in enumerate(self.tracks_to_names):
             self.driver.get(link)
             play_button = self.driver.find_element_by_class_name('playbutton')
@@ -63,6 +58,7 @@ class BandScraper(object):
             song_link = soup.find('audio')['src']
             self.save_song(link, song_link)
             self.update_progress(i + 1)
+        self.driver.close()
 
     def save_song(self, track_link, song_link):
         track_loc = join(self.album_loc, self.tracks_to_names[track_link] + '.mp3')
@@ -78,7 +74,7 @@ def main():
     if not exists(DL):
         mkdir(DL)
 
-    BandScraper(*sys.argv[1:])
+    BandScraper(sys.argv[1])
 
 
 main()
