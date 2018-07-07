@@ -1,3 +1,4 @@
+import sys
 from os import getcwd, mkdir
 from os.path import join, exists
 from urllib.parse import urljoin
@@ -9,31 +10,25 @@ from selenium.webdriver import Chrome, ChromeOptions
 DL = '{}\\downloads\\'.format(getcwd())
 
 
-# https://stackoverflow.com/questions/45631715/downloading-with-chrome-headless-and-selenium
-def enable_download_in_headless_chrome(driver, download_dir):
-    # add missing support for chrome "send_command"  to selenium webdriver
-    driver.command_executor._commands["send_command"] = ("POST", '/session/$sessionId/chromium/send_command')
-
-    params = {'cmd': 'Page.setDownloadBehavior', 'params': {'behavior': 'allow', 'downloadPath': download_dir}}
-    command_result = driver.execute("send_command", params)
-
-
 class BandScraper(object):
-    def __init__(self):
+    def __init__(self, url):
         # url = input("Enter bandcamp album website: ")
         self.url = 'http://musicstore.deru.la/album/1979'
         # self.url = 'https://tonysplendid.bandcamp.com/album/i-know'
-
         self.soup = self.get_soup()
-        self.tracks_to_links = self.get_track_links()
+        self.tracks_to_names = self.get_track_links()
+        print("Got track names.")
+        self.ratio = len(self.tracks_to_names)
 
         chrome_options = ChromeOptions()
         chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--log-level=3')
+
         self.driver = Chrome(chrome_options=chrome_options)
-        enable_download_in_headless_chrome(self.driver, DL)
 
         self.get_music()
         self.driver.close()
+        print("\nDownload complete.")
 
     def get_soup(self):
         resp = requests.get(self.url).content
@@ -59,26 +54,31 @@ class BandScraper(object):
 
     def get_music(self):
 
-        for link in self.tracks_to_links:
+        for i, link in enumerate(self.tracks_to_names):
             self.driver.get(link)
             play_button = self.driver.find_element_by_class_name('playbutton')
             play_button.click()
             page_source = self.driver.page_source
             soup = bs(page_source, 'html.parser')
             song_link = soup.find('audio')['src']
-            print(song_link)
             self.save_song(link, song_link)
+            self.update_progress(i + 1)
 
     def save_song(self, track_link, song_link):
-        track_loc = join(self.album_loc, self.tracks_to_links[track_link] + '.mp3')
+        track_loc = join(self.album_loc, self.tracks_to_names[track_link] + '.mp3')
         with open(track_loc, 'wb') as fileobj:
             fileobj.write(requests.get(song_link).content)
+
+    def update_progress(self, progress):
+        print("\r [{0}] {1}%".format('#' * ((progress * 10) // self.ratio), min((progress * 100) // self.ratio, 100)),
+              end='')
 
 
 def main():
     if not exists(DL):
         mkdir(DL)
-    BandScraper()
+
+    BandScraper(*sys.argv[1:])
 
 
 main()
