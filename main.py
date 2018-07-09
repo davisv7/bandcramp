@@ -47,8 +47,8 @@ class BandScraper(object):
         chrome_options = ChromeOptions()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--log-level=3')
-
         self.driver = Chrome(chrome_options=chrome_options)
+        self.update_progress(0)
         for i, link in enumerate(self.tracks_to_names):
             self.driver.get(link)
             play_button = self.driver.find_element_by_class_name('playbutton')
@@ -66,8 +66,13 @@ class BandScraper(object):
             fileobj.write(requests.get(song_link).content)
 
     def update_progress(self, progress):
-        print("\r [{0}] {1}%".format('#' * ((progress * 10) // self.ratio), min((progress * 100) // self.ratio, 100)),
-              end='')
+        percentage = min((progress * 100) // self.ratio, 100)
+        pounds = '---' * (percentage // 10)
+        dashes = '   ' * (10 - (percentage // 10))
+        if percentage == 100:
+            print("\r [{0}--{1}] {2}%".format(pounds, dashes, percentage), end='')
+        else:
+            print("\r [{0}->{1}] {2}%".format(pounds, dashes, percentage), end='')
 
 
 def main():
