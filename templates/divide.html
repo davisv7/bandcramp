@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>bandcramp</title>
+</head>
+
+<style>
+    .container {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    -moz-transform: translateX(-50%) translateY(-50%);
+    -webkit-transform: translateX(-50%) translateY(-50%);
+    transform: translateX(-50%) translateY(-50%);
+}
+
+h1 {      font-size: 310%;     }
+
+</style>
+
+<div class="container">
+    <header>
+        <center>
+            <h1>bandcramp</h1>
+        </center>
+        <div>
+            <form method="post" action="{{ url_for('divide') }}">
+                {{ form.hidden_tag() }}
+                {{ form.url.label }} {{ form.url() }}
+                <input type="submit" value="Submit"/>
+            </form>
+        </div>
+        {% if link %}
+        <center>
+            <a href="{{link}}" download=link> Download Here </a>
+        </center>
+        {% endif %}
+
+    </header>
+</div>
+</html>
